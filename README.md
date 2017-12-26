@@ -1,3 +1,3 @@
 # Dibby
 
-Alexa skill with Python
+Alexa skill with Python. 
