@@ -1,3 +1,7 @@
+"""My Color Skill."""
+
+from __future__ import print_function
+
 """
 This sample demonstrates a simple skill built with the Amazon Alexa Skills Kit.
 The Intent Schema, Custom Slots, and Sample Utterances for this skill, as well
@@ -7,10 +11,8 @@ For additional samples, visit the Alexa Skills Kit Getting Started guide at
 http://amzn.to/1LGWsLG
 """
 
-from __future__ import print_function
+# --------------- Helpers that build all of the responses ---------------------
 
-
-# --------------- Helpers that build all of the responses ----------------------
 
 def build_speechlet_response(title, output, reprompt_text, should_end_session):
     return {
@@ -42,6 +44,7 @@ def build_response(session_attributes, speechlet_response):
 
 
 # --------------- Functions that control the skill's behavior ------------------
+
 
 def get_welcome_response():
     """ If we wanted to initialize the session to have some attributes we could
@@ -179,6 +182,7 @@ def on_session_ended(session_ended_request, session):
 
 # --------------- Main handler ------------------
 
+
 def lambda_handler(event, context):
     """ Route the incoming request based on type (LaunchRequest, IntentRequest,
     etc.) The JSON body of the request is provided in the event parameter.
@@ -187,7 +191,8 @@ def lambda_handler(event, context):
           event['session']['application']['applicationId'])
 
     """
-    Uncomment this if statement and populate with your skill's application ID to
+    Uncomment this if statement and populate with your skill's application ID
+    to
     prevent someone else from configuring a skill that sends requests to this
     function.
     """
