@@ -1,19 +1,137 @@
 {
-  "intents": [
-    {
-      "intent": "MyColorIsIntent",
-      "slots": [
-        {
-          "name": "Color",
-          "type": "LIST_OF_COLORS"
-        }
-      ]
-    },
-    {
-      "intent": "WhatsMyColorIntent"
-    },
-    {
-      "intent": "AMAZON.HelpIntent"
-    }
-  ]
+  "languageModel": {
+    "types": [
+      {
+        "name": "LIST_OF_COLORS",
+        "values": [
+          {
+            "id": null,
+            "name": {
+              "value": "green",
+              "synonyms": []
+            }
+          },
+          {
+            "id": null,
+            "name": {
+              "value": "red",
+              "synonyms": []
+            }
+          },
+          {
+            "id": null,
+            "name": {
+              "value": "blue",
+              "synonyms": []
+            }
+          },
+          {
+            "id": null,
+            "name": {
+              "value": "orange",
+              "synonyms": []
+            }
+          },
+          {
+            "id": null,
+            "name": {
+              "value": "gold",
+              "synonyms": []
+            }
+          },
+          {
+            "id": null,
+            "name": {
+              "value": "silver",
+              "synonyms": []
+            }
+          },
+          {
+            "id": null,
+            "name": {
+              "value": "yellow",
+              "synonyms": []
+            }
+          },
+          {
+            "id": null,
+            "name": {
+              "value": "black",
+              "synonyms": []
+            }
+          },
+          {
+            "id": null,
+            "name": {
+              "value": "white",
+              "synonyms": []
+            }
+          },
+          {
+            "id": null,
+            "name": {
+              "value": "purple",
+              "synonyms": []
+            }
+          }
+        ]
+      }
+    ],
+    "intents": [
+      {
+        "name": "AMAZON.CancelIntent",
+        "samples": [
+          "Cancel"
+        ]
+      },
+      {
+        "name": "AMAZON.HelpIntent",
+        "samples": [
+          "Help me"
+        ]
+      },
+      {
+        "name": "AMAZON.StopIntent",
+        "samples": [
+          "Stop this"
+        ]
+      },
+      {
+        "name": "MyColorIsIntent",
+        "samples": [
+          "my favorite color is {Color}",
+          "{Color}"
+        ],
+        "slots": [
+          {
+            "name": "Color",
+            "type": "LIST_OF_COLORS"
+          }
+        ]
+      },
+      {
+        "name": "WhatsMyColorIntent",
+        "samples": [
+          "what's my favorite color",
+          "what is my favorite color",
+          "what's my color",
+          "what is my color",
+          "my color",
+          "my favorite color",
+          "get my color",
+          "get my favorite color",
+          "give me my favorite color",
+          "give me my color",
+          "what my color is",
+          "what my favorite color is",
+          "yes",
+          "yup",
+          "sure",
+          "yes please"
+        ],
+        "slots": []
+      }
+    ],
+    "invocationName": "color fox"
+  }
 }
