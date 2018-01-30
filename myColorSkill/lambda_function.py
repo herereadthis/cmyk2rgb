@@ -22,7 +22,7 @@ RESPONSES = {
     'welcome': {
         'card_title': 'Welcome',
         'speech_output': """
-            Welcome to the color fox 2. Tell me your favorite color.
+            Welcome to the color fox 3. Tell me your favorite color.
             """,
         'reprompt_text': """
             Please tell me your favorite color by saying, something like my
@@ -36,6 +36,18 @@ RESPONSES = {
             Thank you for playing the color fox. Have a nice day!
             """,
         'reprompt_text': None,
+        'should_end_session': False
+    },
+    'set_known_color': {
+        'card_title': 'MyColorIsIntent',
+        'speech_output': """
+            I now know your favorite color is {}. You can ask me your favorite
+            color by saying, what's my favorite color?
+            """,
+        'reprompt_text': """
+            You can ask me your favorite color by saying, what's my favorite
+            color?
+            """,
         'should_end_session': False
     },
     'set_unknown_color': {
@@ -131,8 +143,6 @@ def set_color_in_session(intent, session):
     """Set the color in the session and prepare the reply speech to user."""
 
     card_title = intent['name']
-    session_attributes = {}
-    should_end_session = False
 
     if 'Color' in intent['slots']:
         color = intent['slots']['Color']
@@ -143,13 +153,14 @@ def set_color_in_session(intent, session):
 
     if code == CODES['match']:
         session_attributes = create_favorite_color_attributes(favorite_color)
-        speech_output = "I now know your favorite color is " + \
-                        favorite_color + \
-                        ". You can ask me your favorite color by saying, " \
-                        "what's my favorite color?"
-        reprompt_text = "You can ask me your favorite color by saying, " \
-                        "what's my favorite color?"
+        responses = RESPONSES['set_known_color']
+
+        card_title = intent['name']
+        speech_output = responses['speech_output'].format(favorite_color)
+        reprompt_text = responses['reprompt_text']
+        should_end_session = responses['should_end_session']
     elif code == CODES['no_match']:
+        session_attributes = {}
         responses = RESPONSES['set_unknown_color']
 
         card_title = intent['name']

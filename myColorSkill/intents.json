@@ -99,8 +99,7 @@
       {
         "name": "MyColorIsIntent",
         "samples": [
-          "my favorite color is {Color}",
-          "{Color}"
+          "my favorite color is {Color}"
         ],
         "slots": [
           {
@@ -133,5 +132,36 @@
       }
     ],
     "invocationName": "color fox"
+  },
+  "prompts": [
+    {
+      "id": "Elicit.Intent-MyColorIsIntent.IntentSlot-Color",
+      "variations": [
+        {
+          "type": "PlainText",
+          "value": "foo foo"
+        }
+      ]
+    }
+  ],
+  "dialog": {
+    "intents": [
+      {
+        "name": "MyColorIsIntent",
+        "confirmationRequired": false,
+        "prompts": {},
+        "slots": [
+          {
+            "name": "Color",
+            "type": "LIST_OF_COLORS",
+            "elicitationRequired": true,
+            "confirmationRequired": false,
+            "prompts": {
+              "elicitation": "Elicit.Intent-MyColorIsIntent.IntentSlot-Color"
+            }
+          }
+        ]
+      }
+    ]
   }
 }
