@@ -99,7 +99,8 @@
       {
         "name": "MyColorIsIntent",
         "samples": [
-          "my favorite color is {Color}"
+          "my favorite color is {Color}",
+          "It's {Color}"
         ],
         "slots": [
           {

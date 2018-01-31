@@ -22,7 +22,7 @@ RESPONSES = {
     'welcome': {
         'card_title': 'Welcome',
         'speech_output': """
-            Welcome to the color fox 3. Tell me your favorite color.
+            Welcome to the color fox 4. Tell me your favorite color.
             """,
         'reprompt_text': """
             Please tell me your favorite color by saying, something like my
@@ -38,6 +38,37 @@ RESPONSES = {
         'reprompt_text': None,
         'should_end_session': False
     },
+    'get_known_color': {
+        'card_title': 'WhatsMyColorIntent',
+        'speech_output': """
+            Your favorite color is {}. Goodbye.
+            """,
+        'reprompt_text': """
+            You can ask me your favorite color by saying, what's my favorite
+            color?
+            """,
+        'should_end_session': False
+    },
+    'get_unknown_color': {
+        'card_title': 'WhatsMyColorIntent',
+        'speech_output': """
+            I'm not sure what your favorite color is. You can say, my favorite
+            color is red.
+            """,
+        'reprompt_text': """
+            So um, please tell me your favorite color by saying, something
+            like my favorite color is red. {}
+            """,
+        'should_end_session': False
+    },
+    'set_unknown_color': {
+        'card_title': 'MyColorIsIntent',
+        'speech_output': """
+            I'm not sure what your favorite color is. Please try again.
+            """,
+        'reprompt_text': None,
+        'should_end_session': True
+    },
     'set_known_color': {
         'card_title': 'MyColorIsIntent',
         'speech_output': """
@@ -47,18 +78,6 @@ RESPONSES = {
         'reprompt_text': """
             You can ask me your favorite color by saying, what's my favorite
             color?
-            """,
-        'should_end_session': False
-    },
-    'set_unknown_color': {
-        'card_title': 'MyColorIsIntent',
-        'speech_output': """
-            I'm not sure what your favorite color is. Please try again.
-            """,
-        'reprompt_text': """
-            I'm not sure what your favorite color is. You can tell me your
-            favorite color by saying,
-            my favorite color is red.
             """,
         'should_end_session': False
     }
@@ -155,7 +174,6 @@ def set_color_in_session(intent, session):
         session_attributes = create_favorite_color_attributes(favorite_color)
         responses = RESPONSES['set_known_color']
 
-        card_title = intent['name']
         speech_output = responses['speech_output'].format(favorite_color)
         reprompt_text = responses['reprompt_text']
         should_end_session = responses['should_end_session']
@@ -163,7 +181,6 @@ def set_color_in_session(intent, session):
         session_attributes = {}
         responses = RESPONSES['set_unknown_color']
 
-        card_title = intent['name']
         speech_output = responses['speech_output']
         reprompt_text = responses['reprompt_text']
         should_end_session = responses['should_end_session']
@@ -173,24 +190,31 @@ def set_color_in_session(intent, session):
 
 
 def get_color_from_session(intent, session):
+    """Respond to WhatsMyColorIntent request."""
     session_attributes = {}
-    reprompt_text = None
 
-    if session.get('attributes', {}) and "favoriteColor" in session.get('attributes', {}):
+    try:
         favorite_color = session['attributes']['favoriteColor']
-        speech_output = "Your favorite color is " + favorite_color + \
-                        ". Goodbye."
-        should_end_session = True
-    else:
-        speech_output = "I'm not sure what your favorite color is. " \
-                        "You can say, my favorite color is red."
-        should_end_session = False
+
+        responses = RESPONSES['get_known_color']
+
+        card_title = intent['name']
+        speech_output = responses['speech_output'].format(favorite_color)
+        reprompt_text = responses['reprompt_text']
+        should_end_session = responses['should_end_session']
+    except KeyError:
+        responses = RESPONSES['get_unknown_color']
+
+        card_title = intent['name']
+        speech_output = responses['speech_output']
+        reprompt_text = responses['reprompt_text']
+        should_end_session = responses['should_end_session']
 
     # Setting reprompt_text to None signifies that we do not want to reprompt
     # the user. If the user does not respond or says something that is not
     # understood, the session will end.
     return build_response(session_attributes, build_speechlet_response(
-        intent['name'], speech_output, reprompt_text, should_end_session))
+        card_title, speech_output, reprompt_text, should_end_session))
 
 
 # --------------- Events ------------------
