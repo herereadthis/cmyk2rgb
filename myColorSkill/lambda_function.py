@@ -97,6 +97,7 @@ RESPONSES = {
     }
 }
 
+
 # --------------- Helpers that build all of the responses ---------------------
 
 
@@ -127,6 +128,7 @@ def build_speechlet_response(title, output, reprompt_text, should_end_session):
 
 
 def build_response(session_attributes, speechlet_response):
+    """Construct the JSON output for the lambda function."""
     return {
         'version': '1.0',
         'sessionAttributes': session_attributes,
@@ -192,29 +194,32 @@ def create_favorite_color_attributes(favorite_color):
 
 
 def set_color_in_session(intent, session):
-    """ Sets the color in the session and prepares the speech to reply to the
-    user.
-    """
+    """Set the color in the session and prepare the reply speech to user."""
 
     card_title = intent['name']
-    session_attributes = {}
-    should_end_session = False
 
     if 'Color' in intent['slots']:
-        favorite_color = intent['slots']['Color']['value']
+        color = intent['slots']['Color']
+        favorite_color = color['value']
+        resolutions = color['resolutions']
+        resolutions_per_authority = resolutions['resolutionsPerAuthority'][0]
+        code = resolutions_per_authority['status']['code']
+
+    if code == CODES['match']:
         session_attributes = create_favorite_color_attributes(favorite_color)
-        speech_output = "I now know your favorite color is " + \
-                        favorite_color + \
-                        ". You can ask me your favorite color by saying, " \
-                        "what's my favorite color?"
-        reprompt_text = "You can ask me your favorite color by saying, " \
-                        "what's my favorite color?"
-    else:
-        speech_output = "I'm not sure what your favorite color is. " \
-                        "Please try again."
-        reprompt_text = "I'm not sure what your favorite color is. " \
-                        "You can tell me your favorite color by saying, " \
-                        "my favorite color is red."
+        responses = RESPONSES['set_known_color']
+
+        speech_output = responses['speech_output'].format(favorite_color)
+        reprompt_text = responses['reprompt_text']
+        should_end_session = responses['should_end_session']
+    elif code == CODES['no_match']:
+        session_attributes = {}
+        responses = RESPONSES['set_unknown_color']
+
+        speech_output = responses['speech_output']
+        reprompt_text = responses['reprompt_text']
+        should_end_session = responses['should_end_session']
+
     return build_response(session_attributes, build_speechlet_response(
         card_title, speech_output, reprompt_text, should_end_session))
 
