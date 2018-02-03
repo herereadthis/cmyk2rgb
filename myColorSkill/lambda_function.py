@@ -18,6 +18,7 @@ CODES = {
 
 APPLICATION_ID = 'amzn1.ask.skill.a93ba60c-e4f2-42a5-b08a-f5b8ddbf6f44'
 
+
 RESPONSES = {
     'welcome': {
         'card_title': 'Welcome',
@@ -40,7 +41,7 @@ RESPONSES = {
             Thank you for playing the color fox. Have a nice day!
             """,
         'reprompt_text': None,
-        'should_end_session': False
+        'should_end_session': True
     },
     'help': {
         'card_title': 'Session Help',
@@ -97,7 +98,6 @@ RESPONSES = {
     }
 }
 
-
 # --------------- Helpers that build all of the responses ---------------------
 
 
@@ -116,19 +116,14 @@ def build_speechlet_response(title, output, reprompt_text, should_end_session):
         'reprompt': {
             'outputSpeech': {
                 'type': 'PlainText',
-                # If the user either does not reply to the welcome message or
-                # says something that is not understood, they will be prompted
-                # again with this text.
                 'text': reprompt_text
             }
         },
-        # Setting this to true ends the session and exits the skill.
         'shouldEndSession': should_end_session
     }
 
 
 def build_response(session_attributes, speechlet_response):
-    """Construct the JSON output for the lambda function."""
     return {
         'version': '1.0',
         'sessionAttributes': session_attributes,
@@ -139,23 +134,24 @@ def build_response(session_attributes, speechlet_response):
 # --------------- Functions that control the skill's behavior -----------------
 
 
-def get_welcome_response(request, session):
-    """Create the welcome response."""
-    # If we wanted to initialize the session to have some attributes, we could
-    # add those here.
-
-    responses = RESPONSES['welcome']
-
-    custom_welcome_text = responses['custom_data']['new_session_text']
-    if session['new'] is not True:
-        custom_welcome_text = responses['custom_data']['current_session_text']
+def get_welcome_response():
+    """ If we wanted to initialize the session to have some attributes we could
+    add those here
+    """
 
     session_attributes = {}
-    card_title = responses['card_title']
-    speech_output = responses['speech_output'].format(custom_welcome_text)
-    reprompt_text = responses['reprompt_text']
-    should_end_session = responses['should_end_session']
+    card_title = "Welcome"
+    speech_output = """
+    Welcome to the color fox 7. Tell me your favorite color.
+    Jimmy, you are prettier than your wife Uyen.
+    """
 
+    # If the user either does not reply to the welcome message or says
+    # something that is not understood, they will be prompted again with this
+    # text.
+    reprompt_text = "Please tell me your favorite color by saying, " \
+                    "my favorite color is red."
+    should_end_session = False
     return build_response(session_attributes, build_speechlet_response(
         card_title, speech_output, reprompt_text, should_end_session))
 
@@ -168,21 +164,9 @@ def handle_session_end_request():
     card_title = responses['card_title']
     speech_output = responses['speech_output']
     reprompt_text = responses['reprompt_text']
+    # Setting this to true ends the session and exits the skill.
     should_end_session = responses['should_end_session']
-
-    return build_response(session_attributes, build_speechlet_response(
-        card_title, speech_output, reprompt_text, should_end_session))
-
-
-def handle_help_request():
-    """Create the response user asks for help."""
-    responses = RESPONSES['help']
-
-    session_attributes = {}
-    card_title = responses['card_title']
-    speech_output = responses['speech_output']
-    reprompt_text = responses['reprompt_text']
-    should_end_session = responses['should_end_session']
+    should_end_session = True
 
     return build_response(session_attributes, build_speechlet_response(
         card_title, speech_output, reprompt_text, should_end_session))
@@ -193,79 +177,73 @@ def create_favorite_color_attributes(favorite_color):
 
 
 def set_color_in_session(intent, session):
-    """Set the color in the session and prepare the reply speech to user."""
+    """ Sets the color in the session and prepares the speech to reply to the
+    user.
+    """
 
     card_title = intent['name']
+    session_attributes = {}
+    should_end_session = False
 
     if 'Color' in intent['slots']:
-        color = intent['slots']['Color']
-        favorite_color = color['value']
-        resolutions = color['resolutions']
-        resolutions_per_authority = resolutions['resolutionsPerAuthority'][0]
-        code = resolutions_per_authority['status']['code']
-
-    if code == CODES['match']:
+        favorite_color = intent['slots']['Color']['value']
         session_attributes = create_favorite_color_attributes(favorite_color)
-        responses = RESPONSES['set_known_color']
-
-        speech_output = responses['speech_output'].format(favorite_color)
-        reprompt_text = responses['reprompt_text']
-        should_end_session = responses['should_end_session']
-    elif code == CODES['no_match']:
-        session_attributes = {}
-        responses = RESPONSES['set_unknown_color']
-
-        speech_output = responses['speech_output']
-        reprompt_text = responses['reprompt_text']
-        should_end_session = responses['should_end_session']
-
+        speech_output = "I now know your favorite color is " + \
+                        favorite_color + \
+                        ". You can ask me your favorite color by saying, " \
+                        "what's my favorite color?"
+        reprompt_text = "You can ask me your favorite color by saying, " \
+                        "what's my favorite color?"
+    else:
+        speech_output = "I'm not sure what your favorite color is. " \
+                        "Please try again."
+        reprompt_text = "I'm not sure what your favorite color is. " \
+                        "You can tell me your favorite color by saying, " \
+                        "my favorite color is red."
     return build_response(session_attributes, build_speechlet_response(
         card_title, speech_output, reprompt_text, should_end_session))
 
 
 def get_color_from_session(intent, session):
-    """Respond to WhatsMyColorIntent request."""
     session_attributes = {}
+    reprompt_text = None
 
-    try:
+    if session.get('attributes', {}) and "favoriteColor" in session.get('attributes', {}):
         favorite_color = session['attributes']['favoriteColor']
-
-        responses = RESPONSES['get_known_color']
-
-        card_title = intent['name']
-        speech_output = responses['speech_output'].format(favorite_color)
-        reprompt_text = responses['reprompt_text']
-        should_end_session = responses['should_end_session']
-    except KeyError:
-        responses = RESPONSES['get_unknown_color']
-
-        card_title = intent['name']
-        speech_output = responses['speech_output']
-        reprompt_text = responses['reprompt_text']
-        should_end_session = responses['should_end_session']
+        speech_output = "Your favorite color is " + favorite_color + \
+                        "session" + str(session_attributes) + \
+                        ". Goodbye."
+        should_end_session = True
+    else:
+        speech_output = "I'm not sure what your favorite color is. " \
+                        "You can say, my favorite color is red."
+        should_end_session = False
 
     # Setting reprompt_text to None signifies that we do not want to reprompt
     # the user. If the user does not respond or says something that is not
     # understood, the session will end.
     return build_response(session_attributes, build_speechlet_response(
-        card_title, speech_output, reprompt_text, should_end_session))
+        intent['name'], speech_output, reprompt_text, should_end_session))
 
 
 # --------------- Events ------------------
 
 def on_session_started(session_started_request, session):
     """ Called when the session starts """
-    request_id = session_started_request['requestId']
 
-    print("on_session_started requestId=" + request_id
+    print("on_session_started requestId=" + session_started_request['requestId']
           + ", sessionId=" + session['sessionId'])
 
 
-def on_launch(request, session):
-    """Launch the skill without the user specifying what they want."""
+def on_launch(launch_request, session):
+    """ Called when the user launches the skill without specifying what they
+    want
+    """
 
+    print("on_launch requestId=" + launch_request['requestId'] +
+          ", sessionId=" + session['sessionId'])
     # Dispatch to your skill's launch
-    return get_welcome_response(request, session)
+    return get_welcome_response()
 
 
 def on_intent(intent_request, session):
@@ -282,12 +260,12 @@ def on_intent(intent_request, session):
         return handle_session_end_request()
     elif intent_name == "AMAZON.StopIntent":
         return handle_session_end_request()
-    elif intent_name == "AMAZON.HelpIntent":
-        return handle_help_request()
     elif intent_name == "MyColorIsIntent":
         return set_color_in_session(intent, session)
     elif intent_name == "WhatsMyColorIntent":
         return get_color_from_session(intent, session)
+    elif intent_name == "AMAZON.HelpIntent":
+        return get_welcome_response()
     else:
         raise ValueError("Invalid intent")
 
