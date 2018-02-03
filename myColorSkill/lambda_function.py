@@ -18,7 +18,6 @@ CODES = {
 
 APPLICATION_ID = 'amzn1.ask.skill.a93ba60c-e4f2-42a5-b08a-f5b8ddbf6f44'
 
-
 RESPONSES = {
     'welcome': {
         'card_title': 'Welcome',
@@ -116,9 +115,13 @@ def build_speechlet_response(title, output, reprompt_text, should_end_session):
         'reprompt': {
             'outputSpeech': {
                 'type': 'PlainText',
+                # If the user either does not reply to the welcome message or
+                # says something that is not understood, they will be prompted
+                # again with this text.
                 'text': reprompt_text
             }
         },
+        # Setting this to true ends the session and exits the skill.
         'shouldEndSession': should_end_session
     }
 
@@ -166,7 +169,20 @@ def handle_session_end_request():
     reprompt_text = responses['reprompt_text']
     # Setting this to true ends the session and exits the skill.
     should_end_session = responses['should_end_session']
-    should_end_session = True
+
+    return build_response(session_attributes, build_speechlet_response(
+        card_title, speech_output, reprompt_text, should_end_session))
+
+
+def handle_help_request():
+    """Create the response user asks for help."""
+    responses = RESPONSES['help']
+
+    session_attributes = {}
+    card_title = responses['card_title']
+    speech_output = responses['speech_output']
+    reprompt_text = responses['reprompt_text']
+    should_end_session = responses['should_end_session']
 
     return build_response(session_attributes, build_speechlet_response(
         card_title, speech_output, reprompt_text, should_end_session))
@@ -260,12 +276,12 @@ def on_intent(intent_request, session):
         return handle_session_end_request()
     elif intent_name == "AMAZON.StopIntent":
         return handle_session_end_request()
+    elif intent_name == "AMAZON.HelpIntent":
+        return handle_help_request()
     elif intent_name == "MyColorIsIntent":
         return set_color_in_session(intent, session)
     elif intent_name == "WhatsMyColorIntent":
         return get_color_from_session(intent, session)
-    elif intent_name == "AMAZON.HelpIntent":
-        return get_welcome_response()
     else:
         raise ValueError("Invalid intent")
 
