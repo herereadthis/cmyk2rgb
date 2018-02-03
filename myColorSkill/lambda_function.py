@@ -22,14 +22,17 @@ RESPONSES = {
     'welcome': {
         'card_title': 'Welcome',
         'speech_output': """
-            Welcome to the color fox 4. Tell me your favorite color.
-            {}
+            {} the color fox 4. Tell me your favorite color.
             """,
         'reprompt_text': """
             Please tell me your favorite color by saying, something like my
             favorite color is red.
             """,
-        'should_end_session': False
+        'should_end_session': False,
+        'custom_data': {
+            'new_session_text': 'Welcome to a new session of',
+            'current_session_text': 'Let\'s continue your current session of'
+        }
     },
     'end_session': {
         'card_title': 'Session Ended',
@@ -136,16 +139,20 @@ def build_response(session_attributes, speechlet_response):
 # --------------- Functions that control the skill's behavior -----------------
 
 
-def get_welcome_response(launch_str):
+def get_welcome_response(request, session):
     """Create the welcome response."""
     # If we wanted to initialize the session to have some attributes, we could
     # add those here.
 
     responses = RESPONSES['welcome']
 
+    custom_welcome_text = responses['custom_data']['new_session_text']
+    if session['new'] is not True:
+        custom_welcome_text = responses['custom_data']['current_session_text']
+
     session_attributes = {}
-    card_title = responses['card_title'].format(launch_str)
-    speech_output = responses['speech_output']
+    card_title = responses['card_title']
+    speech_output = responses['speech_output'].format(custom_welcome_text)
     reprompt_text = responses['reprompt_text']
     should_end_session = responses['should_end_session']
 
@@ -254,15 +261,11 @@ def on_session_started(session_started_request, session):
           + ", sessionId=" + session['sessionId'])
 
 
-def on_launch(launch_request, session):
+def on_launch(request, session):
     """Launch the skill without the user specifying what they want."""
-    launch_str = 'on_launch requestId={0}, sessionId={1}'.format(
-        launch_request['requestId'],
-        session['sessionId']
-    )
 
     # Dispatch to your skill's launch
-    return get_welcome_response(launch_str)
+    return get_welcome_response(request, session)
 
 
 def on_intent(intent_request, session):
