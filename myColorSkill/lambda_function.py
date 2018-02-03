@@ -61,7 +61,7 @@ RESPONSES = {
             You can ask me your favorite color by saying, what's my favorite
             color?
             """,
-        'should_end_session': False
+        'should_end_session': True
     },
     'get_unknown_color': {
         'card_title': 'WhatsMyColorIntent',
@@ -225,33 +225,41 @@ def set_color_in_session(intent, session):
 
 
 def get_color_from_session(intent, session):
+    """Respond to WhatsMyColorIntent request."""
     session_attributes = {}
     reprompt_text = None
 
-    if session.get('attributes', {}) and "favoriteColor" in session.get('attributes', {}):
+    try:
         favorite_color = session['attributes']['favoriteColor']
-        speech_output = "Your favorite color is " + favorite_color + \
-                        "session" + str(session_attributes) + \
-                        ". Goodbye."
-        should_end_session = True
-    else:
-        speech_output = "I'm not sure what your favorite color is. " \
-                        "You can say, my favorite color is red."
-        should_end_session = False
+
+        responses = RESPONSES['get_known_color']
+
+        card_title = intent['name']
+        speech_output = responses['speech_output'].format(favorite_color)
+        reprompt_text = responses['reprompt_text']
+        should_end_session = responses['should_end_session']
+    except KeyError:
+        responses = RESPONSES['get_unknown_color']
+
+        card_title = intent['name']
+        speech_output = responses['speech_output']
+        reprompt_text = responses['reprompt_text']
+        should_end_session = responses['should_end_session']
 
     # Setting reprompt_text to None signifies that we do not want to reprompt
     # the user. If the user does not respond or says something that is not
     # understood, the session will end.
     return build_response(session_attributes, build_speechlet_response(
-        intent['name'], speech_output, reprompt_text, should_end_session))
+        card_title, speech_output, reprompt_text, should_end_session))
 
 
 # --------------- Events ------------------
 
 def on_session_started(session_started_request, session):
     """ Called when the session starts """
+    request_id = session_started_request['requestId']
 
-    print("on_session_started requestId=" + session_started_request['requestId']
+    print("on_session_started requestId=" + request_id
           + ", sessionId=" + session['sessionId'])
 
 
