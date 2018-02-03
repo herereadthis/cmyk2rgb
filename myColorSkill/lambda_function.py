@@ -137,24 +137,23 @@ def build_response(session_attributes, speechlet_response):
 # --------------- Functions that control the skill's behavior -----------------
 
 
-def get_welcome_response():
-    """ If we wanted to initialize the session to have some attributes we could
-    add those here
-    """
+def get_welcome_response(request, session):
+    """Create the welcome response."""
+    # If we wanted to initialize the session to have some attributes, we could
+    # add those here.
+
+    responses = RESPONSES['welcome']
+
+    custom_welcome_text = responses['custom_data']['new_session_text']
+    if session['new'] is not True:
+        custom_welcome_text = responses['custom_data']['current_session_text']
 
     session_attributes = {}
-    card_title = "Welcome"
-    speech_output = """
-    Welcome to the color fox 7. Tell me your favorite color.
-    Jimmy, you are prettier than your wife Uyen.
-    """
+    card_title = responses['card_title']
+    speech_output = responses['speech_output'].format(custom_welcome_text)
+    reprompt_text = responses['reprompt_text']
+    should_end_session = responses['should_end_session']
 
-    # If the user either does not reply to the welcome message or says
-    # something that is not understood, they will be prompted again with this
-    # text.
-    reprompt_text = "Please tell me your favorite color by saying, " \
-                    "my favorite color is red."
-    should_end_session = False
     return build_response(session_attributes, build_speechlet_response(
         card_title, speech_output, reprompt_text, should_end_session))
 
@@ -251,15 +250,11 @@ def on_session_started(session_started_request, session):
           + ", sessionId=" + session['sessionId'])
 
 
-def on_launch(launch_request, session):
-    """ Called when the user launches the skill without specifying what they
-    want
-    """
+def on_launch(request, session):
+    """Launch the skill without the user specifying what they want."""
 
-    print("on_launch requestId=" + launch_request['requestId'] +
-          ", sessionId=" + session['sessionId'])
     # Dispatch to your skill's launch
-    return get_welcome_response()
+    return get_welcome_response(request, session)
 
 
 def on_intent(intent_request, session):
