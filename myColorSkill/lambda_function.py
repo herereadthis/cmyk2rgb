@@ -40,7 +40,7 @@ RESPONSES = {
             Thank you for playing the color fox. Have a nice day!
             """,
         'reprompt_text': None,
-        'should_end_session': False
+        'should_end_session': True
     },
     'help': {
         'card_title': 'Session Help',
@@ -61,7 +61,7 @@ RESPONSES = {
             You can ask me your favorite color by saying, what's my favorite
             color?
             """,
-        'should_end_session': False
+        'should_end_session': True
     },
     'get_unknown_color': {
         'card_title': 'WhatsMyColorIntent',
@@ -168,6 +168,7 @@ def handle_session_end_request():
     card_title = responses['card_title']
     speech_output = responses['speech_output']
     reprompt_text = responses['reprompt_text']
+    # Setting this to true ends the session and exits the skill.
     should_end_session = responses['should_end_session']
 
     return build_response(session_attributes, build_speechlet_response(
@@ -194,7 +195,6 @@ def create_favorite_color_attributes(favorite_color):
 
 def set_color_in_session(intent, session):
     """Set the color in the session and prepare the reply speech to user."""
-
     card_title = intent['name']
 
     if 'Color' in intent['slots']:
@@ -255,10 +255,11 @@ def get_color_from_session(intent, session):
 
 def on_session_started(session_started_request, session):
     """ Called when the session starts """
-    request_id = session_started_request['requestId']
+    request_id = request['requestId']
+    session_id = session['sessionId']
 
-    print("on_session_started requestId=" + request_id
-          + ", sessionId=" + session['sessionId'])
+    output = 'on_session_started requestId={0}, sessionId={1}'
+    print(output.format(request_id, session_id))
 
 
 def on_launch(request, session):
