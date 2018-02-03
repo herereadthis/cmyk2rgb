@@ -30,7 +30,7 @@ RESPONSES = {
             """,
         'should_end_session': False
     },
-    'session_end': {
+    'end_session': {
         'card_title': 'Session Ended',
         'speech_output': """
             Thank you for playing the color fox. Have a nice day!
@@ -38,11 +38,21 @@ RESPONSES = {
         'reprompt_text': None,
         'should_end_session': False
     },
+    'help': {
+        'card_title': 'Session Help',
+        'speech_output': """
+            I'm interested in your favorite color. You can tell me your
+            favorite color by saying something like, "it's blue."
+            """,
+        'reprompt_text': """
+            Everyone has a favorite color. Please tell me yours by saying
+            something like, "it's blue."
+            """,
+        'should_end_session': False
+    },
     'get_known_color': {
         'card_title': 'WhatsMyColorIntent',
-        'speech_output': """
-            Your favorite color is {}. Goodbye.
-            """,
+        'speech_output': 'Your favorite color is {}. Goodbye.',
         'reprompt_text': """
             You can ask me your favorite color by saying, what's my favorite
             color?
@@ -88,6 +98,7 @@ RESPONSES = {
 
 
 def build_speechlet_response(title, output, reprompt_text, should_end_session):
+    """Create the response for Alexa to interpret."""
     return {
         'outputSpeech': {
             'type': 'PlainText',
@@ -142,7 +153,21 @@ def get_welcome_response():
 
 def handle_session_end_request():
     """Create the response when ending exiting the app."""
-    responses = RESPONSES['session_end']
+    responses = RESPONSES['end_session']
+
+    session_attributes = {}
+    card_title = responses['card_title']
+    speech_output = responses['speech_output']
+    reprompt_text = responses['reprompt_text']
+    should_end_session = responses['should_end_session']
+
+    return build_response(session_attributes, build_speechlet_response(
+        card_title, speech_output, reprompt_text, should_end_session))
+
+
+def handle_help_request():
+    """Create the response user asks for help."""
+    responses = RESPONSES['help']
 
     session_attributes = {}
     card_title = responses['card_title']
@@ -221,8 +246,9 @@ def get_color_from_session(intent, session):
 
 def on_session_started(session_started_request, session):
     """ Called when the session starts """
+    request_id = session_started_request['requestId']
 
-    print("on_session_started requestId=" + session_started_request['requestId']
+    print("on_session_started requestId=" + request_id
           + ", sessionId=" + session['sessionId'])
 
 
@@ -251,12 +277,12 @@ def on_intent(intent_request, session):
         return handle_session_end_request()
     elif intent_name == "AMAZON.StopIntent":
         return handle_session_end_request()
+    elif intent_name == "AMAZON.HelpIntent":
+        return handle_help_request()
     elif intent_name == "MyColorIsIntent":
         return set_color_in_session(intent, session)
     elif intent_name == "WhatsMyColorIntent":
         return get_color_from_session(intent, session)
-    elif intent_name == "AMAZON.HelpIntent":
-        return get_welcome_response()
     else:
         raise ValueError("Invalid intent")
 
