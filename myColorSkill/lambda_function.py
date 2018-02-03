@@ -23,6 +23,7 @@ RESPONSES = {
         'card_title': 'Welcome',
         'speech_output': """
             Welcome to the color fox 4. Tell me your favorite color.
+            {}
             """,
         'reprompt_text': """
             Please tell me your favorite color by saying, something like my
@@ -124,6 +125,7 @@ def build_speechlet_response(title, output, reprompt_text, should_end_session):
 
 
 def build_response(session_attributes, speechlet_response):
+    """Construct the JSON output for the lambda function."""
     return {
         'version': '1.0',
         'sessionAttributes': session_attributes,
@@ -134,7 +136,7 @@ def build_response(session_attributes, speechlet_response):
 # --------------- Functions that control the skill's behavior -----------------
 
 
-def get_welcome_response():
+def get_welcome_response(launch_str):
     """Create the welcome response."""
     # If we wanted to initialize the session to have some attributes, we could
     # add those here.
@@ -142,7 +144,7 @@ def get_welcome_response():
     responses = RESPONSES['welcome']
 
     session_attributes = {}
-    card_title = responses['card_title']
+    card_title = responses['card_title'].format(launch_str)
     speech_output = responses['speech_output']
     reprompt_text = responses['reprompt_text']
     should_end_session = responses['should_end_session']
@@ -253,14 +255,14 @@ def on_session_started(session_started_request, session):
 
 
 def on_launch(launch_request, session):
-    """ Called when the user launches the skill without specifying what they
-    want
-    """
+    """Launch the skill without the user specifying what they want."""
+    launch_str = 'on_launch requestId={0}, sessionId={1}'.format(
+        launch_request['requestId'],
+        session['sessionId']
+    )
 
-    print("on_launch requestId=" + launch_request['requestId'] +
-          ", sessionId=" + session['sessionId'])
     # Dispatch to your skill's launch
-    return get_welcome_response()
+    return get_welcome_response(launch_str)
 
 
 def on_intent(intent_request, session):
