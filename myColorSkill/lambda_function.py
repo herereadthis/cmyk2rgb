@@ -189,10 +189,6 @@ def handle_help_request():
         card_title, speech_output, reprompt_text, should_end_session))
 
 
-def create_favorite_color_attributes(favorite_color):
-    return {"favoriteColor": favorite_color}
-
-
 def set_color_in_session(intent, session):
     """Set the color in the session and prepare the reply speech to user."""
     card_title = intent['name']
@@ -251,10 +247,17 @@ def get_color_from_session(intent, session):
         card_title, speech_output, reprompt_text, should_end_session))
 
 
+def create_favorite_color_attributes(favorite_color):
+    """Add favorite color to session attributes."""
+    return {
+        "favoriteColor": favorite_color
+    }
+
+
 # --------------- Events ------------------
 
-def on_session_started(session_started_request, session):
-    """ Called when the session starts """
+def on_session_started(request, session):
+    """Call when the session starts."""
     request_id = request['requestId']
     session_id = session['sessionId']
 
@@ -264,19 +267,20 @@ def on_session_started(session_started_request, session):
 
 def on_launch(request, session):
     """Launch the skill without the user specifying what they want."""
-
     # Dispatch to your skill's launch
     return get_welcome_response(request, session)
 
 
-def on_intent(intent_request, session):
-    """ Called when the user specifies an intent for this skill """
+def on_intent(request, session):
+    """Call when the user specifies an intent for this skill."""
+    request_id = request['requestId']
+    session_id = session['sessionId']
 
-    print("on_intent requestId=" + intent_request['requestId'] +
-          ", sessionId=" + session['sessionId'])
+    output = 'on_intent requestId={0}, sessionId={1}'
+    print(output.format(request_id, session_id))
 
-    intent = intent_request['intent']
-    intent_name = intent_request['intent']['name']
+    intent = request['intent']
+    intent_name = intent['name']
 
     # Dispatch to your skill's intent handlers
     if intent_name == "AMAZON.CancelIntent":
@@ -295,9 +299,7 @@ def on_intent(intent_request, session):
 
 def on_session_ended(session_ended_request, session):
     """Called when the user ends the session."""
-    """
-    Is not called when the skill returns should_end_session=true
-    """
+    # Is not called when the skill returns should_end_session=true
     print("on_session_ended requestId=" + session_ended_request['requestId'] +
           ", sessionId=" + session['sessionId'])
     # add cleanup logic here
@@ -323,8 +325,7 @@ def lambda_handler(event, context):
         raise ValueError("Invalid Application ID")
 
     if event['session']['new']:
-        on_session_started({'requestId': event['request']['requestId']},
-                           event['session'])
+        on_session_started(event['request'], event['session'])
 
     event_type = event['request']['type']
 

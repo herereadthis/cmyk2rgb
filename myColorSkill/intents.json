@@ -73,6 +73,34 @@
               "value": "purple",
               "synonyms": []
             }
+          },
+          {
+            "id": null,
+            "name": {
+              "value": "pink",
+              "synonyms": []
+            }
+          },
+          {
+            "id": null,
+            "name": {
+              "value": "cyan",
+              "synonyms": []
+            }
+          },
+          {
+            "id": null,
+            "name": {
+              "value": "magenta",
+              "synonyms": []
+            }
+          },
+          {
+            "id": null,
+            "name": {
+              "value": "violet",
+              "synonyms": []
+            }
           }
         ]
       }
