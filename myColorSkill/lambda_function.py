@@ -56,12 +56,14 @@ RESPONSES = {
     },
     'get_known_color': {
         'card_title': 'WhatsMyColorIntent',
-        'speech_output': 'Your favorite color is {}. Goodbye.',
+        'speech_output': """
+            Your favorite color is {}. Would you like to continue?
+            """,
         'reprompt_text': """
             You can ask me your favorite color by saying, what's my favorite
             color?
             """,
-        'should_end_session': True
+        'should_end_session': False
     },
     'get_unknown_color': {
         'card_title': 'WhatsMyColorIntent',
@@ -78,10 +80,11 @@ RESPONSES = {
     'set_unknown_color': {
         'card_title': 'MyColorIsIntent',
         'speech_output': """
-            I'm not sure what your favorite color is. Please try again.
+            I'm sorry, I don't think I know that color. Please pick another
+            color.
             """,
         'reprompt_text': None,
-        'should_end_session': True
+        'should_end_session': False
     },
     'set_known_color': {
         'card_title': 'MyColorIsIntent',
@@ -189,6 +192,34 @@ def handle_help_request():
         card_title, speech_output, reprompt_text, should_end_session))
 
 
+def handle_yes_request():
+    """Create the response when the user says yes."""
+    # responses = RESPONSES['help']
+
+    session_attributes = {}
+    card_title = 'yes'
+    speech_output = 'yes yes yes'
+    reprompt_text = None
+    should_end_session = True
+
+    return build_response(session_attributes, build_speechlet_response(
+        card_title, speech_output, reprompt_text, should_end_session))
+
+
+def handle_no_request():
+    """Create the response when the user says no."""
+    # responses = RESPONSES['help']
+
+    session_attributes = {}
+    card_title = 'no'
+    speech_output = 'no no no'
+    reprompt_text = None
+    should_end_session = True
+
+    return build_response(session_attributes, build_speechlet_response(
+        card_title, speech_output, reprompt_text, should_end_session))
+
+
 def set_color_in_session(intent, session):
     """Set the color in the session and prepare the reply speech to user."""
     card_title = intent['name']
@@ -221,11 +252,10 @@ def set_color_in_session(intent, session):
 
 def get_color_from_session(intent, session):
     """Respond to WhatsMyColorIntent request."""
-    session_attributes = {}
-
     try:
         favorite_color = session['attributes']['favoriteColor']
 
+        session_attributes = create_continue_prompt_attributes()
         responses = RESPONSES['get_known_color']
 
         card_title = intent['name']
@@ -233,6 +263,7 @@ def get_color_from_session(intent, session):
         reprompt_text = responses['reprompt_text']
         should_end_session = responses['should_end_session']
     except KeyError:
+        session_attributes = {}
         responses = RESPONSES['get_unknown_color']
 
         card_title = intent['name']
@@ -251,6 +282,13 @@ def create_favorite_color_attributes(favorite_color):
     """Add favorite color to session attributes."""
     return {
         "favoriteColor": favorite_color
+    }
+
+
+def create_continue_prompt_attributes():
+    """Add favorite color to session attributes."""
+    return {
+        "continuePromptAsked": 'true'
     }
 
 
@@ -289,6 +327,10 @@ def on_intent(request, session):
         return handle_session_end_request()
     elif intent_name == "AMAZON.HelpIntent":
         return handle_help_request()
+    elif intent_name == "ContinueSessionIntent":
+        return handle_yes_request()
+    elif intent_name == "EndSessionIntent":
+        return handle_no_request()
     elif intent_name == "MyColorIsIntent":
         return set_color_in_session(intent, session)
     elif intent_name == "WhatsMyColorIntent":

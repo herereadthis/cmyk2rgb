@@ -119,10 +119,40 @@
         ]
       },
       {
+        "name": "AMAZON.NoIntent",
+        "samples": [
+          "nope",
+          "nah"
+        ]
+      },
+      {
         "name": "AMAZON.StopIntent",
         "samples": [
           "Stop this"
         ]
+      },
+      {
+        "name": "ContinueSessionIntent",
+        "samples": [
+          "yes",
+          "yep",
+          "yeah",
+          "yes please",
+          "sure",
+          "of course"
+        ],
+        "slots": []
+      },
+      {
+        "name": "EndSessionIntent",
+        "samples": [
+          "no",
+          "nope",
+          "naw",
+          "nah",
+          "no thanks"
+        ],
+        "slots": []
       },
       {
         "name": "MyColorIsIntent",
@@ -151,11 +181,7 @@
           "give me my favorite color",
           "give me my color",
           "what my color is",
-          "what my favorite color is",
-          "yes",
-          "yup",
-          "sure",
-          "yes please"
+          "what my favorite color is"
         ],
         "slots": []
       }
