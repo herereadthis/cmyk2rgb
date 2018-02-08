@@ -105,6 +105,24 @@ RESPONSES = {
 # --------------- Helpers that build all of the responses ---------------------
 
 
+def build_unformatted_speechlet_response(response_type):
+    """Build a basic response that does not require formatting."""
+    try:
+        responses = RESPONSES[response_type]
+    except:
+        responses = RESPONSES['help']
+
+    session_attributes = {}
+    card_title = responses['card_title']
+    speech_output = responses['speech_output']
+    reprompt_text = responses['reprompt_text']
+    # Setting this to true ends the session and exits the skill.
+    should_end_session = responses['should_end_session']
+
+    return build_response(session_attributes, build_speechlet_response(
+        card_title, speech_output, reprompt_text, should_end_session))
+
+
 def build_speechlet_response(title, output, reprompt_text, should_end_session):
     """Create the response for Alexa to interpret."""
     return {
@@ -166,31 +184,12 @@ def get_welcome_response(request, session):
 
 def handle_session_end_request():
     """Create the response when ending exiting the app."""
-    responses = RESPONSES['end_session']
-
-    session_attributes = {}
-    card_title = responses['card_title']
-    speech_output = responses['speech_output']
-    reprompt_text = responses['reprompt_text']
-    # Setting this to true ends the session and exits the skill.
-    should_end_session = responses['should_end_session']
-
-    return build_response(session_attributes, build_speechlet_response(
-        card_title, speech_output, reprompt_text, should_end_session))
+    return build_unformatted_speechlet_response('end_session')
 
 
 def handle_help_request():
     """Create the response user asks for help."""
-    responses = RESPONSES['help']
-
-    session_attributes = {}
-    card_title = responses['card_title']
-    speech_output = responses['speech_output']
-    reprompt_text = responses['reprompt_text']
-    should_end_session = responses['should_end_session']
-
-    return build_response(session_attributes, build_speechlet_response(
-        card_title, speech_output, reprompt_text, should_end_session))
+    return build_unformatted_speechlet_response('help')
 
 
 def handle_yes_request(intent, session):
