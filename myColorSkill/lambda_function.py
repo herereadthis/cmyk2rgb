@@ -1,6 +1,7 @@
 """My Color Skill."""
 
 from __future__ import print_function
+from distutils.util import strtobool
 
 """
 This sample demonstrates a simple skill built with the Amazon Alexa Skills Kit.
@@ -192,15 +193,29 @@ def handle_help_request():
         card_title, speech_output, reprompt_text, should_end_session))
 
 
-def handle_yes_request():
+def handle_yes_request(intent, session):
     """Create the response when the user says yes."""
-    # responses = RESPONSES['help']
+    try:
+        continue_prompt_asked = session['attributes']['continuePromptAsked']
+        if strtobool(continue_prompt_asked) == 1:
+            continue_prompt_asked = True
+        else:
+            continue_prompt_asked = False
 
-    session_attributes = {}
-    card_title = 'yes'
-    speech_output = 'yes yes yes'
-    reprompt_text = None
-    should_end_session = True
+        session_attributes = {}
+        card_title = 'yes'
+        speech_output = 'yes yes yes {0} {1}'.format(
+            continue_prompt_asked,
+            continue_prompt_asked is True
+        )
+        reprompt_text = None
+        should_end_session = True
+    except KeyError:
+        session_attributes = {}
+        card_title = 'yeah'
+        speech_output = 'yeah yeah yeah'
+        reprompt_text = None
+        should_end_session = True
 
     return build_response(session_attributes, build_speechlet_response(
         card_title, speech_output, reprompt_text, should_end_session))
@@ -255,7 +270,7 @@ def get_color_from_session(intent, session):
     try:
         favorite_color = session['attributes']['favoriteColor']
 
-        session_attributes = create_continue_prompt_attributes()
+        session_attributes = create_continue_prompt_attributes(favorite_color)
         responses = RESPONSES['get_known_color']
 
         card_title = intent['name']
@@ -285,11 +300,15 @@ def create_favorite_color_attributes(favorite_color):
     }
 
 
-def create_continue_prompt_attributes():
+def create_continue_prompt_attributes(favorite_color):
     """Add favorite color to session attributes."""
-    return {
-        "continuePromptAsked": 'true'
-    }
+    try:
+        attributes = create_favorite_color_attributes(favorite_color)
+    except:
+        attributes = create_favorite_color_attributes(None)
+
+    attributes['continuePromptAsked'] = 'True'
+    return attributes
 
 
 # --------------- Events ------------------
@@ -328,7 +347,7 @@ def on_intent(request, session):
     elif intent_name == "AMAZON.HelpIntent":
         return handle_help_request()
     elif intent_name == "ContinueSessionIntent":
-        return handle_yes_request()
+        return handle_yes_request(intent, session)
     elif intent_name == "EndSessionIntent":
         return handle_no_request()
     elif intent_name == "MyColorIsIntent":
