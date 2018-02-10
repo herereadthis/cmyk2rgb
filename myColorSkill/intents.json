@@ -125,6 +125,29 @@
         ]
       },
       {
+        "name": "ContinueSessionIntent",
+        "samples": [
+          "yes",
+          "yep",
+          "yeah",
+          "yes please",
+          "sure",
+          "of course"
+        ],
+        "slots": []
+      },
+      {
+        "name": "EndSessionIntent",
+        "samples": [
+          "no",
+          "nope",
+          "naw",
+          "nah",
+          "no thanks"
+        ],
+        "slots": []
+      },
+      {
         "name": "MyColorIsIntent",
         "samples": [
           "my favorite color is {Color}",

@@ -23,7 +23,7 @@ RESPONSES = {
     'welcome': {
         'card_title': 'Welcome',
         'speech_output': """
-            {} the color fox 4. Tell me your favorite color.
+            {} the color fox. Tell me your favorite color.
             """,
         'reprompt_text': """
             Please tell me your favorite color by saying, something like my
@@ -119,11 +119,12 @@ def build_unformatted_speechlet_response(response_type):
     # Setting this to true ends the session and exits the skill.
     should_end_session = responses['should_end_session']
 
-    return build_response(session_attributes, build_speechlet_response(
-        card_title, speech_output, reprompt_text, should_end_session))
+    response = get_response(card_title, speech_output, reprompt_text,
+                            should_end_session)
+    return get_lambda_output(session_attributes, response)
 
 
-def build_speechlet_response(title, output, reprompt_text, should_end_session):
+def get_response(title, output, reprompt_text, should_end_session):
     """Create the response for Alexa to interpret."""
     return {
         'outputSpeech': {
@@ -135,12 +136,15 @@ def build_speechlet_response(title, output, reprompt_text, should_end_session):
             'title': "SessionSpeechlet - " + title,
             'content': "SessionSpeechlet - " + output
         },
+        # If the user either does not reply to the welcome message or says
+        # something that is not understood, they will be prompted again with
+        # this text.
         'reprompt': {
             'outputSpeech': {
                 'type': 'PlainText',
-                # If the user either does not reply to the welcome message or
-                # says something that is not understood, they will be prompted
-                # again with this text.
+                # Setting reprompt_text to None signifies that we do not want
+                # to reprompt the user. If the user does not respond or says
+                # something that is not understood, the session will end.
                 'text': reprompt_text
             }
         },
@@ -149,7 +153,7 @@ def build_speechlet_response(title, output, reprompt_text, should_end_session):
     }
 
 
-def build_response(session_attributes, speechlet_response):
+def get_lambda_output(session_attributes, speechlet_response):
     """Construct the JSON output for the lambda function."""
     return {
         'version': '1.0',
@@ -161,7 +165,7 @@ def build_response(session_attributes, speechlet_response):
 # --------------- Functions that control the skill's behavior -----------------
 
 
-def get_welcome_response(request, session):
+def handle_welcome(request, session):
     """Create the welcome response."""
     # If we wanted to initialize the session to have some attributes, we could
     # add those here.
@@ -178,8 +182,9 @@ def get_welcome_response(request, session):
     reprompt_text = responses['reprompt_text']
     should_end_session = responses['should_end_session']
 
-    return build_response(session_attributes, build_speechlet_response(
-        card_title, speech_output, reprompt_text, should_end_session))
+    response = get_response(card_title, speech_output, reprompt_text,
+                            should_end_session)
+    return get_lambda_output(session_attributes, response)
 
 
 def handle_session_end_request():
@@ -216,8 +221,9 @@ def handle_yes_request(intent, session):
         reprompt_text = None
         should_end_session = True
 
-    return build_response(session_attributes, build_speechlet_response(
-        card_title, speech_output, reprompt_text, should_end_session))
+    response = get_response(card_title, speech_output,
+                            reprompt_text, should_end_session)
+    return get_lambda_output(session_attributes, response)
 
 
 def handle_no_request():
@@ -230,8 +236,9 @@ def handle_no_request():
     reprompt_text = None
     should_end_session = True
 
-    return build_response(session_attributes, build_speechlet_response(
-        card_title, speech_output, reprompt_text, should_end_session))
+    response = get_response(card_title, speech_output, reprompt_text,
+                            should_end_session)
+    return get_lambda_output(session_attributes, response)
 
 
 def set_color_in_session(intent, session):
@@ -252,16 +259,14 @@ def set_color_in_session(intent, session):
         speech_output = responses['speech_output'].format(favorite_color)
         reprompt_text = responses['reprompt_text']
         should_end_session = responses['should_end_session']
+
+        response = get_response(card_title, speech_output, reprompt_text,
+                                should_end_session)
+        result = get_lambda_output(session_attributes, response)
     elif code == CODES['no_match']:
-        session_attributes = {}
-        responses = RESPONSES['set_unknown_color']
+        result = build_unformatted_speechlet_response('set_unknown_color')
 
-        speech_output = responses['speech_output']
-        reprompt_text = responses['reprompt_text']
-        should_end_session = responses['should_end_session']
-
-    return build_response(session_attributes, build_speechlet_response(
-        card_title, speech_output, reprompt_text, should_end_session))
+    return result
 
 
 def get_color_from_session(intent, session):
@@ -276,20 +281,14 @@ def get_color_from_session(intent, session):
         speech_output = responses['speech_output'].format(favorite_color)
         reprompt_text = responses['reprompt_text']
         should_end_session = responses['should_end_session']
+
+        response = get_response(card_title, speech_output, reprompt_text,
+                                should_end_session)
+        result = get_lambda_output(session_attributes, response)
     except KeyError:
-        session_attributes = {}
-        responses = RESPONSES['get_unknown_color']
+        result = build_unformatted_speechlet_response('get_unknown_color')
 
-        card_title = intent['name']
-        speech_output = responses['speech_output']
-        reprompt_text = responses['reprompt_text']
-        should_end_session = responses['should_end_session']
-
-    # Setting reprompt_text to None signifies that we do not want to reprompt
-    # the user. If the user does not respond or says something that is not
-    # understood, the session will end.
-    return build_response(session_attributes, build_speechlet_response(
-        card_title, speech_output, reprompt_text, should_end_session))
+    return result
 
 
 def create_favorite_color_attributes(favorite_color):
@@ -324,7 +323,7 @@ def on_session_started(request, session):
 def on_launch(request, session):
     """Launch the skill without the user specifying what they want."""
     # Dispatch to your skill's launch
-    return get_welcome_response(request, session)
+    return handle_welcome(request, session)
 
 
 def on_intent(request, session):
