@@ -35,6 +35,30 @@ RESPONSES = {
             'current_session_text': 'Let\'s continue your current session of'
         }
     },
+    'welcome_new': {
+        'card_title': 'Welcome',
+        'speech_output': """
+            Welcome to a new session of the color fox. Tell me your favorite
+            color.
+            """,
+        'reprompt_text': """
+            Please tell me your favorite color by saying, something like my
+            favorite color is red.
+            """,
+        'should_end_session': False
+    },
+    'welcome_continue': {
+        'card_title': 'Welcome',
+        'speech_output': """
+            Let\'s continue your current session of the color fox. Tell me your
+            favorite color.
+            """,
+        'reprompt_text': """
+            Please tell me your favorite color by saying, something like my
+            favorite color is red.
+            """,
+        'should_end_session': False
+    },
     'end_session': {
         'card_title': 'Session Ended',
         'speech_output': """
@@ -112,7 +136,6 @@ def build_unformatted_speechlet_response(response_type):
     except:
         responses = RESPONSES['help']
 
-    session_attributes = {}
     card_title = responses['card_title']
     speech_output = responses['speech_output']
     reprompt_text = responses['reprompt_text']
@@ -121,7 +144,7 @@ def build_unformatted_speechlet_response(response_type):
 
     response = get_response(card_title, speech_output, reprompt_text,
                             should_end_session)
-    return get_lambda_output(session_attributes, response)
+    return get_lambda_output(response)
 
 
 def get_response(title, output, reprompt_text, should_end_session):
@@ -133,8 +156,8 @@ def get_response(title, output, reprompt_text, should_end_session):
         },
         'card': {
             'type': 'Simple',
-            'title': "SessionSpeechlet - " + title,
-            'content': "SessionSpeechlet - " + output
+            'title': 'SessionSpeechlet - {}'.format(title),
+            'content': 'SessionSpeechlet - {}'.format(output)
         },
         # If the user either does not reply to the welcome message or says
         # something that is not understood, they will be prompted again with
@@ -153,12 +176,12 @@ def get_response(title, output, reprompt_text, should_end_session):
     }
 
 
-def get_lambda_output(session_attributes, speechlet_response):
+def get_lambda_output(response, session_attributes={}):
     """Construct the JSON output for the lambda function."""
     return {
         'version': '1.0',
         'sessionAttributes': session_attributes,
-        'response': speechlet_response
+        'response': response
     }
 
 
@@ -169,22 +192,11 @@ def handle_welcome(request, session):
     """Create the welcome response."""
     # If we wanted to initialize the session to have some attributes, we could
     # add those here.
-
-    responses = RESPONSES['welcome']
-
-    custom_welcome_text = responses['custom_data']['new_session_text']
+    response_type = 'welcome_new'
     if session['new'] is not True:
-        custom_welcome_text = responses['custom_data']['current_session_text']
+        response_type = 'welcome_continue'
 
-    session_attributes = {}
-    card_title = responses['card_title']
-    speech_output = responses['speech_output'].format(custom_welcome_text)
-    reprompt_text = responses['reprompt_text']
-    should_end_session = responses['should_end_session']
-
-    response = get_response(card_title, speech_output, reprompt_text,
-                            should_end_session)
-    return get_lambda_output(session_attributes, response)
+    return build_unformatted_speechlet_response(response_type)
 
 
 def handle_session_end_request():
@@ -197,6 +209,19 @@ def handle_help_request():
     return build_unformatted_speechlet_response('help')
 
 
+def handle_continue_end_ambiguity_request(intent, session):
+    """Create response when user says yes or no at the wrong time."""
+    session_attributes = {}
+    card_title = 'ContinueEndAmbiguity'
+    speech_output = 'I\'m not sure what you want.'
+    reprompt_text = None
+    should_end_session = True
+
+    response = get_response(card_title, speech_output,
+                            reprompt_text, should_end_session)
+    return get_lambda_output(response, session_attributes)
+
+
 def handle_yes_request(intent, session):
     """Create the response when the user says yes."""
     try:
@@ -207,38 +232,46 @@ def handle_yes_request(intent, session):
             continue_prompt_asked = False
 
         session_attributes = {}
-        card_title = 'yes'
+        card_title = 'ContinueSessionIntent'
         speech_output = 'yes yes yes {0} {1}'.format(
             continue_prompt_asked,
             continue_prompt_asked is True
         )
         reprompt_text = None
         should_end_session = True
+
+        response = get_response(card_title, speech_output,
+                                reprompt_text, should_end_session)
+        result = get_lambda_output(response, session_attributes)
     except KeyError:
+        result = handle_continue_end_ambiguity_request(intent, session)
+
+    return result
+
+
+def handle_no_request(intent, session):
+    """Create the response when the user says no."""
+    # return handle_session_end_request()
+    # responses = RESPONSES['help']
+
+    try:
+        favorite_color = session['attributes']['favoriteColor']
+        continue_prompt_asked = session['attributes']['continuePromptAsked']
+
         session_attributes = {}
-        card_title = 'yeah'
-        speech_output = 'yeah yeah yeah'
+        card_title = 'EndSessionIntent'
+        speech_output = 'no no no {}'.format(favorite_color,
+                                             continue_prompt_asked)
         reprompt_text = None
         should_end_session = True
 
-    response = get_response(card_title, speech_output,
-                            reprompt_text, should_end_session)
-    return get_lambda_output(session_attributes, response)
+        response = get_response(card_title, speech_output, reprompt_text,
+                                should_end_session)
+        result = get_lambda_output(response, session_attributes)
+    except KeyError:
+        result = handle_continue_end_ambiguity_request(intent, session)
 
-
-def handle_no_request():
-    """Create the response when the user says no."""
-    # responses = RESPONSES['help']
-
-    session_attributes = {}
-    card_title = 'no'
-    speech_output = 'no no no'
-    reprompt_text = None
-    should_end_session = True
-
-    response = get_response(card_title, speech_output, reprompt_text,
-                            should_end_session)
-    return get_lambda_output(session_attributes, response)
+    return result
 
 
 def set_color_in_session(intent, session):
@@ -262,7 +295,7 @@ def set_color_in_session(intent, session):
 
         response = get_response(card_title, speech_output, reprompt_text,
                                 should_end_session)
-        result = get_lambda_output(session_attributes, response)
+        result = get_lambda_output(response, session_attributes)
     elif code == CODES['no_match']:
         result = build_unformatted_speechlet_response('set_unknown_color')
 
@@ -284,7 +317,7 @@ def get_color_from_session(intent, session):
 
         response = get_response(card_title, speech_output, reprompt_text,
                                 should_end_session)
-        result = get_lambda_output(session_attributes, response)
+        result = get_lambda_output(response, session_attributes)
     except KeyError:
         result = build_unformatted_speechlet_response('get_unknown_color')
 
@@ -347,7 +380,7 @@ def on_intent(request, session):
     elif intent_name == "ContinueSessionIntent":
         return handle_yes_request(intent, session)
     elif intent_name == "EndSessionIntent":
-        return handle_no_request()
+        return handle_no_request(intent, session)
     elif intent_name == "MyColorIsIntent":
         return set_color_in_session(intent, session)
     elif intent_name == "WhatsMyColorIntent":
