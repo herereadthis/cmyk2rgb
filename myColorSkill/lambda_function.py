@@ -20,21 +20,6 @@ CODES = {
 APPLICATION_ID = 'amzn1.ask.skill.a93ba60c-e4f2-42a5-b08a-f5b8ddbf6f44'
 
 RESPONSES = {
-    'welcome': {
-        'card_title': 'Welcome',
-        'speech_output': """
-            {} the color fox. Tell me your favorite color.
-            """,
-        'reprompt_text': """
-            Please tell me your favorite color by saying, something like my
-            favorite color is red.
-            """,
-        'should_end_session': False,
-        'custom_data': {
-            'new_session_text': 'Welcome to a new session of',
-            'current_session_text': 'Let\'s continue your current session of'
-        }
-    },
     'welcome_new': {
         'card_title': 'Welcome',
         'speech_output': """
@@ -59,7 +44,16 @@ RESPONSES = {
             """,
         'should_end_session': False
     },
-    'end_session': {
+    'end_session_known_color': {
+        'card_title': 'Session Ended',
+        'speech_output': """
+            Thank you for playing the color fox. I hope your day is full of
+            many {0} things and {1} foods!
+            """,
+        'reprompt_text': None,
+        'should_end_session': True
+    },
+    'end_session_unknown_color': {
         'card_title': 'Session Ended',
         'speech_output': """
             Thank you for playing the color fox. Have a nice day!
@@ -199,9 +193,31 @@ def handle_welcome(request, session):
     return build_unformatted_speechlet_response(response_type)
 
 
-def handle_session_end_request():
+def handle_session_end_request(intent, session):
     """Create the response when ending exiting the app."""
-    return build_unformatted_speechlet_response('end_session')
+    try:
+        favorite_color = session['attributes']['favoriteColor']
+
+        # card_title = 'end session known color'
+        # speech_output = 'end known color {}'.format(favorite_color)
+        # reprompt_text = None
+        # should_end_session = True
+
+        responses = RESPONSES['end_session_known_color']
+
+        card_title = intent['name']
+        # speech_output = 'end known color {}'.format(favorite_color)
+        speech_output = responses['speech_output'].format(favorite_color,
+                                                          favorite_color)
+        reprompt_text = responses['reprompt_text']
+        should_end_session = responses['should_end_session']
+
+        response = get_response(card_title, speech_output,
+                                reprompt_text, should_end_session)
+        return get_lambda_output(response)
+    except KeyError:
+        return build_unformatted_speechlet_response(
+            'end_session_unknown_color')
 
 
 def handle_help_request():
@@ -372,9 +388,9 @@ def on_intent(request, session):
 
     # Dispatch to your skill's intent handlers
     if intent_name == "AMAZON.CancelIntent":
-        return handle_session_end_request()
+        return handle_session_end_request(intent, session)
     elif intent_name == "AMAZON.StopIntent":
-        return handle_session_end_request()
+        return handle_session_end_request(intent, session)
     elif intent_name == "AMAZON.HelpIntent":
         return handle_help_request()
     elif intent_name == "ContinueSessionIntent":
@@ -389,13 +405,13 @@ def on_intent(request, session):
         raise ValueError("Invalid intent")
 
 
-def on_session_ended(session_ended_request, session):
+def on_session_ended(request, session):
     """Called when the user ends the session."""
     # Is not called when the skill returns should_end_session=true
-    print("on_session_ended requestId=" + session_ended_request['requestId'] +
+    print("on_session_ended requestId=" + request['requestId'] +
           ", sessionId=" + session['sessionId'])
     # add cleanup logic here
-    return handle_session_end_request()
+    return handle_session_end_request(request['intent'], session)
 
 
 def lambda_handler(event, context):
