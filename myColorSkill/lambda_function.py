@@ -420,10 +420,9 @@ def on_session_ended(request, session):
 
 def lambda_handler(event, context):
     """Main Handler skill."""
-    """
-    Route the incoming request based on type (LaunchRequest, IntentRequest,
-    etc.) The JSON body of the request is provided in the event parameter.
-    """
+    # Route the incoming request based on type (LaunchRequest, IntentRequest,
+    # etc.) The JSON body of the request is provided in the event parameter.
+
     application_id = event['session']['application']['applicationId']
 
     print('event.session.application.applicationId={}'.format(application_id))
