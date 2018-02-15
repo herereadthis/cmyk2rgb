@@ -35,12 +35,12 @@ RESPONSES = {
     'welcome_continue': {
         'card_title': 'Welcome',
         'speech_output': """
-            Let\'s continue your current session of the color fox. Tell me your
-            favorite color.
+            Let\'s continue your current session of the color fox. Last time,
+            your favorite color was {}. Please choose a new color.
             """,
         'reprompt_text': """
-            Please tell me your favorite color by saying, something like my
-            favorite color is red.
+            Please pick a new color by saying something like my favorite color
+            is red.
             """,
         'should_end_session': False
     },
@@ -63,6 +63,14 @@ RESPONSES = {
     },
     'continue_end_ambituity': {
         'card_title': 'ContinueEndAmbiguity',
+        'speech_output': """
+            I\'m not sure what you want.
+            """,
+        'reprompt_text': None,
+        'should_end_session': True
+    },
+    'continue_session': {
+        'card_title': 'ContinueSessionIntent',
         'speech_output': """
             I\'m not sure what you want.
             """,
@@ -215,13 +223,22 @@ def get_lambda_output(response, session_attributes={}):
 
 def handle_welcome(request, session):
     """Create the welcome response."""
-    # If we wanted to initialize the session to have some attributes, we could
-    # add those here.
-    response_type = 'welcome_new'
-    if session['new'] is not True:
-        response_type = 'welcome_continue'
+    return build_unformatted_speechlet_response('welcome_new')
 
-    return build_unformatted_speechlet_response(response_type)
+
+def handle_restart_session(request, session):
+    """Create a welcome response to continue session."""
+    try:
+        favorite_color = session['attributes']['favoriteColor']
+        output = RESPONSES['welcome_continue']['speech_output']
+        output = output.format(favorite_color, favorite_color)
+
+        response = get_response_alt('set_known_color', speech_output=output)
+        result = get_lambda_output(response)
+    except KeyError:
+        result = build_unformatted_speechlet_response('help')
+
+    return result
 
 
 def handle_session_end_request(intent, session):
@@ -252,36 +269,19 @@ def handle_continue_end_ambiguity_request(intent, session):
 
 def handle_yes_request(intent, session):
     """Create the response when the user says yes."""
+    result = handle_continue_end_ambiguity_request(intent, session)
     try:
         continue_prompt_asked = session['attributes']['continuePromptAsked']
         if strtobool(continue_prompt_asked) == 1:
-            continue_prompt_asked = True
-        else:
-            continue_prompt_asked = False
-
-        session_attributes = {}
-        card_title = 'ContinueSessionIntent'
-        speech_output = 'yes yes yes {0} {1}'.format(
-            continue_prompt_asked,
-            continue_prompt_asked is True
-        )
-        reprompt_text = None
-        should_end_session = True
-
-        response = get_response(card_title, speech_output,
-                                reprompt_text, should_end_session)
-        result = get_lambda_output(response, session_attributes)
+            result = handle_restart_session(intent, session)
     except KeyError:
-        result = handle_continue_end_ambiguity_request(intent, session)
+        pass
 
     return result
 
 
 def handle_no_request(intent, session):
     """Create the response when the user says no."""
-    # return handle_session_end_request()
-    # responses = RESPONSES['help']
-
     try:
         favorite_color = session['attributes']['favoriteColor']
         continue_prompt_asked = session['attributes']['continuePromptAsked']
@@ -436,6 +436,8 @@ def lambda_handler(event, context):
         raise ValueError("Invalid Application ID")
 
     if event['session']['new']:
+        # If we wanted to initialize the session to have some attributes, we
+        # could add those here.
         on_session_started(event['request'], event['session'])
 
     event_type = event['request']['type']
