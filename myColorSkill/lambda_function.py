@@ -61,20 +61,25 @@ RESPONSES = {
         'reprompt_text': None,
         'should_end_session': True
     },
-    'continue_end_ambituity': {
+    'continue_ambiguity_nocolor': {
         'card_title': 'ContinueEndAmbiguity',
         'speech_output': """
-            I\'m not sure what you want.
+            I\'m not sure what you want. Please pick a favorite color.
             """,
-        'reprompt_text': None,
-        'should_end_session': True
+        'reprompt_text': """
+            I\'m not sure what you want. Please pick a favorite color.
+            """,
+        'should_end_session': False
     },
-    'continue_session': {
-        'card_title': 'ContinueSessionIntent',
+    'continue_ambiguity_color': {
+        'card_title': 'ContinueEndAmbiguity',
         'speech_output': """
-            I\'m not sure what you want.
+            I\'m not sure what you want. You can ask me what\'s your favorite
+            color.
             """,
-        'reprompt_text': None,
+        'reprompt_text': """
+        Try asking, What\'s my favorite color?
+        """,
         'should_end_session': True
     },
     'help': {
@@ -103,7 +108,7 @@ RESPONSES = {
     'get_unknown_color': {
         'card_title': 'WhatsMyColorIntent',
         'speech_output': """
-            I'm not sure what your favorite color is. You can say, my favorite
+            I\'m not sure what your favorite color is. You can say, my favorite
             color is red.
             """,
         'reprompt_text': """
@@ -263,8 +268,20 @@ def handle_help_request():
 
 def handle_continue_end_ambiguity_request(intent, session):
     """Create response when user says yes or no at the wrong time."""
-    # TODO: handle yes and no.
-    return build_unformatted_speechlet_response('continue_end_ambituity')
+    result = build_unformatted_speechlet_response('continue_ambiguity_nocolor')
+
+    try:
+        favorite_color = session['attributes']['favoriteColor']
+        output = RESPONSES['continue_ambiguity_color']['speech_output']
+        output = output.format(favorite_color)
+
+        response = get_response_alt('end_session_known_color',
+                                    speech_output=output)
+        return get_lambda_output(response)
+    except KeyError:
+        pass
+
+    return result
 
 
 def handle_yes_request(intent, session):
@@ -282,24 +299,13 @@ def handle_yes_request(intent, session):
 
 def handle_no_request(intent, session):
     """Create the response when the user says no."""
+    result = handle_continue_end_ambiguity_request(intent, session)
     try:
-        favorite_color = session['attributes']['favoriteColor']
         continue_prompt_asked = session['attributes']['continuePromptAsked']
         if strtobool(continue_prompt_asked) == 1:
             result = handle_session_end_request(intent, session)
-        else:
-            session_attributes = {}
-            card_title = 'EndSessionIntent'
-            speech_output = 'no no no {}'.format(favorite_color,
-                                                 continue_prompt_asked)
-            reprompt_text = None
-            should_end_session = True
-
-            response = get_response(card_title, speech_output, reprompt_text,
-                                    should_end_session)
-            result = get_lambda_output(response, session_attributes)
     except KeyError:
-        result = handle_continue_end_ambiguity_request(intent, session)
+        pass
 
     return result
 
