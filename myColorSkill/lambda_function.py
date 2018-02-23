@@ -67,7 +67,7 @@ RESPONSES = {
             I\'m not sure what you want. Please pick a favorite color.
             """,
         'reprompt_text': """
-            I\'m not sure what you want. Please pick a favorite color.
+            You can ask for help if you\'re not sure what to do.
             """,
         'should_end_session': False
     },
@@ -80,7 +80,7 @@ RESPONSES = {
         'reprompt_text': """
         Try asking, What\'s my favorite color?
         """,
-        'should_end_session': True
+        'should_end_session': False
     },
     'help': {
         'card_title': 'Session Help',
@@ -275,9 +275,9 @@ def handle_continue_end_ambiguity_request(intent, session):
         output = RESPONSES['continue_ambiguity_color']['speech_output']
         output = output.format(favorite_color)
 
-        response = get_response_alt('end_session_known_color',
-                                    speech_output=output)
-        return get_lambda_output(response)
+        response = get_response_alt('continue_ambiguity_color')
+        session_attributes = create_favorite_color_attributes(favorite_color)
+        return get_lambda_output(response, session_attributes)
     except KeyError:
         pass
 
