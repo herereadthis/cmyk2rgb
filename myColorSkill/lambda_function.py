@@ -162,7 +162,7 @@ def build_unformatted_speechlet_response(response_type):
     return get_lambda_output(response)
 
 
-def get_response_alt(response_type, **kwargs):
+def get_formatted_response(response_type, **kwargs):
     """Create the response for Alexa to interpret."""
     try:
         responses = RESPONSES[response_type]
@@ -238,7 +238,8 @@ def handle_restart_session(request, session):
         output = RESPONSES['welcome_continue']['speech_output']
         output = output.format(favorite_color, favorite_color)
 
-        response = get_response_alt('set_known_color', speech_output=output)
+        response = get_formatted_response('set_known_color',
+                                          speech_output=output)
         result = get_lambda_output(response)
     except KeyError:
         result = build_unformatted_speechlet_response('help')
@@ -253,8 +254,8 @@ def handle_session_end_request(intent, session):
         output = RESPONSES['end_session_known_color']['speech_output']
         output = output.format(favorite_color, favorite_color)
 
-        response = get_response_alt('end_session_known_color',
-                                    speech_output=output)
+        response = get_formatted_response('end_session_known_color',
+                                          speech_output=output)
         return get_lambda_output(response)
     except KeyError:
         return build_unformatted_speechlet_response(
@@ -275,7 +276,7 @@ def handle_continue_end_ambiguity_request(intent, session):
         output = RESPONSES['continue_ambiguity_color']['speech_output']
         output = output.format(favorite_color)
 
-        response = get_response_alt('continue_ambiguity_color')
+        response = get_formatted_response('continue_ambiguity_color')
         session_attributes = create_favorite_color_attributes(favorite_color)
         return get_lambda_output(response, session_attributes)
     except KeyError:
@@ -310,7 +311,7 @@ def handle_no_request(intent, session):
     return result
 
 
-def set_color_in_session(intent, session):
+def handle_set_color(intent, session):
     """Set the color in the session and prepare the reply speech to user."""
     if 'Color' in intent['slots']:
         color = intent['slots']['Color']
@@ -325,7 +326,8 @@ def set_color_in_session(intent, session):
         output = RESPONSES['set_known_color']['speech_output']
         output = output.format(favorite_color)
 
-        response = get_response_alt('set_known_color', speech_output=output)
+        response = get_formatted_response('set_known_color',
+                                          speech_output=output)
         result = get_lambda_output(response, session_attributes)
     elif code == CODES['no_match']:
         result = build_unformatted_speechlet_response('set_unknown_color')
@@ -333,7 +335,7 @@ def set_color_in_session(intent, session):
     return result
 
 
-def get_color_from_session(intent, session):
+def handle_get_color(intent, session):
     """Respond to WhatsMyColorIntent request."""
     try:
         favorite_color = session['attributes']['favoriteColor']
@@ -341,7 +343,8 @@ def get_color_from_session(intent, session):
         output = RESPONSES['get_known_color']['speech_output']
         output = output.format(favorite_color)
 
-        response = get_response_alt('get_known_color', speech_output=output)
+        response = get_formatted_response('get_known_color',
+                                          speech_output=output)
         session_attributes = create_continue_prompt_attributes(favorite_color)
         result = get_lambda_output(response, session_attributes)
     except KeyError:
@@ -408,9 +411,9 @@ def on_intent(request, session):
     elif intent_name == "EndSessionIntent":
         return handle_no_request(intent, session)
     elif intent_name == "MyColorIsIntent":
-        return set_color_in_session(intent, session)
+        return handle_set_color(intent, session)
     elif intent_name == "WhatsMyColorIntent":
-        return get_color_from_session(intent, session)
+        return handle_get_color(intent, session)
     else:
         raise ValueError("Invalid intent")
 
