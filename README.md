@@ -1,3 +1,3 @@
-# Dibby
+# cmyk2rgb
 
-Alexa skill with Python. 
+Python Package to convert CMYK colors to RGB using ICC profiles

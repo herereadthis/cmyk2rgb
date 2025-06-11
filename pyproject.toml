@@ -1,0 +1,18 @@
+[tool.poetry]
+name = "cmyk2rgb"
+version = "0.1.0"
+description = "Convert CMYK to RGB using ICC profiles"
+authors = ["you@example.com"]
+packages = [{ include = "cmyk2rgb" }]
+
+[tool.poetry.dependencies]
+python = "^3.11"
+typer = { extras = ["all"], version = "0.16.0" }
+Pillow = "11.2.1"
+
+[tool.poetry.scripts]
+cmyk2rgb = "cmyk2rgb.cli:app"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
